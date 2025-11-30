@@ -1,6 +1,9 @@
 local UIS = game:GetService("UserInputService")
 local Player = game.Players.LocalPlayer
 
+-- Warte bis PlayerGui existiert
+local playerGui = Player:WaitForChild("PlayerGui")
+
 -- Farben
 local GREY = Color3.fromRGB(40, 40, 40)
 local DARKGREY = Color3.fromRGB(55, 55, 55)
@@ -13,7 +16,7 @@ local LIGHTBLUE = Color3.fromRGB(100, 170, 255)
 local gui = Instance.new("ScreenGui")
 gui.Name = "CustomMenuUI"
 gui.ResetOnSpawn = false
-gui.Parent = Player:WaitForChild("PlayerGui")
+gui.Parent = playerGui
 
 -- Hauptmenü
 local menu = Instance.new("Frame")
