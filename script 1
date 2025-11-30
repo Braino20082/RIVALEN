@@ -1,0 +1,89 @@
+local UIS = game:GetService("UserInputService")
+
+local gui = script.Parent
+local menu = gui:WaitForChild("MenuFrame")
+
+-- Anfangszustand
+menu.Visible = true
+
+-- Taste F ein/ausblenden
+UIS.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if input.KeyCode == Enum.KeyCode.F then
+        menu.Visible = not menu.Visible
+    end
+end)
+
+-- FARBEN
+local GREY = Color3.fromRGB(40, 40, 40)
+local LIGHTBLUE = Color3.fromRGB(100, 170, 255)
+
+-- Menü-Layout
+menu.BackgroundColor3 = GREY
+menu.Size = UDim2.new(0, 600, 0, 350)
+menu.Position = UDim2.new(0.5, -300, 0.5, -175)
+
+-- Linkes Panel
+local LeftPanel = Instance.new("Frame")
+LeftPanel.Parent = menu
+LeftPanel.BackgroundColor3 = Color3.fromRGB(50,50,50)
+LeftPanel.Size = UDim2.new(0, 180, 1, 0)
+
+local UIList = Instance.new("UIListLayout")
+UIList.Parent = LeftPanel
+UIList.Padding = UDim.new(0, 6)
+UIList.FillDirection = Enum.FillDirection.Vertical
+UIList.SortOrder = Enum.SortOrder.LayoutOrder
+
+-- Rechts Panel
+local RightPanel = Instance.new("Frame")
+RightPanel.Parent = menu
+RightPanel.BackgroundColor3 = Color3.fromRGB(60,60,60)
+RightPanel.Position = UDim2.new(0, 185, 0, 0)
+RightPanel.Size = UDim2.new(1, -185, 1, 0)
+
+-- Titel für Rechts
+local Title = Instance.new("TextLabel")
+Title.Parent = RightPanel
+Title.Text = "Einstellungen"
+Title.TextColor3 = LIGHTBLUE
+Title.TextScaled = true
+Title.BackgroundTransparency = 1
+Title.Size = UDim2.new(1, 0, 0, 40)
+
+-- Beispiel Buttons Links
+local function CreateButton(name)
+    local btn = Instance.new("TextButton")
+    btn.Parent = LeftPanel
+    btn.Text = name
+    btn.TextScaled = true
+    btn.BackgroundColor3 = GREY
+    btn.TextColor3 = LIGHTBLUE
+    btn.Size = UDim2.new(1, -8, 0, 40)
+
+    btn.MouseEnter:Connect(function()
+        btn.BackgroundColor3 = Color3.fromRGB(60,60,60)
+    end)
+    btn.MouseLeave:Connect(function()
+        btn.BackgroundColor3 = GREY
+    end)
+
+    return btn
+end
+
+local btnSettings = CreateButton("Optionen")
+local btnVisuals = CreateButton("Anzeige")
+local btnStats = CreateButton("Infos")
+
+-- Beispiel-Funktion rechts ändern
+btnSettings.MouseButton1Click:Connect(function()
+    Title.Text = "Einstellungen"
+end)
+
+btnVisuals.MouseButton1Click:Connect(function()
+    Title.Text = "Anzeige"
+end)
+
+btnStats.MouseButton1Click:Connect(function()
+    Title.Text = "Infos"
+end)
