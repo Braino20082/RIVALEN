@@ -16,7 +16,7 @@ gui.Name = "CustomMenuUI"
 gui.ResetOnSpawn = false
 gui.Parent = playerGui
 
--- Hauptmenü
+-- Hauptmenü (jetzt draggable und resizable)
 local menu = Instance.new("Frame")
 menu.Name = "MenuFrame"
 menu.BackgroundColor3 = GREY
@@ -24,13 +24,59 @@ menu.BorderSizePixel = 0
 menu.Size = UDim2.new(0, 600, 0, 350)
 menu.Position = UDim2.new(0.5, -300, 0.5, -175)
 menu.AnchorPoint = Vector2.new(0.5, 0.5)
+menu.Active = true
+menu.Draggable = true
 menu.Parent = gui
+
+-- Top Bar für besseres Dragging
+local topBar = Instance.new("Frame")
+topBar.Name = "TopBar"
+topBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+topBar.BorderSizePixel = 0
+topBar.Size = UDim2.new(1, 0, 0, 30)
+topBar.Parent = menu
+
+local topBarTitle = Instance.new("TextLabel")
+topBarTitle.BackgroundTransparency = 1
+topBarTitle.Size = UDim2.new(1, -60, 1, 0)
+topBarTitle.Position = UDim2.new(0, 10, 0, 0)
+topBarTitle.Font = Enum.Font.GothamBold
+topBarTitle.TextSize = 16
+topBarTitle.TextColor3 = LIGHTBLUE
+topBarTitle.Text = "Custom Menu"
+topBarTitle.TextXAlignment = Enum.TextXAlignment.Left
+topBarTitle.Parent = topBar
+
+-- Close Button
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 30, 0, 30)
+closeBtn.Position = UDim2.new(1, -30, 0, 0)
+closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+closeBtn.BorderSizePixel = 0
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextSize = 18
+closeBtn.TextColor3 = Color3.new(1, 1, 1)
+closeBtn.Text = "X"
+closeBtn.Parent = topBar
+
+closeBtn.MouseButton1Click:Connect(function()
+    menu.Visible = false
+end)
+
+closeBtn.MouseEnter:Connect(function()
+    closeBtn.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
+end)
+
+closeBtn.MouseLeave:Connect(function()
+    closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+end)
 
 -- Linkes Panel
 local left = Instance.new("Frame")
 left.BackgroundColor3 = DARKGREY
 left.BorderSizePixel = 0
-left.Size = UDim2.new(0, 180, 1, 0)
+left.Size = UDim2.new(0, 180, 1, -30)
+left.Position = UDim2.new(0, 0, 0, 30)
 left.Parent = menu
 
 local list = Instance.new("UIListLayout")
@@ -49,8 +95,8 @@ padding.Parent = left
 local right = Instance.new("Frame")
 right.BackgroundColor3 = LIGHTGREY
 right.BorderSizePixel = 0
-right.Size = UDim2.new(1, -185, 1, 0)
-right.Position = UDim2.new(0, 185, 0, 0)
+right.Size = UDim2.new(1, -185, 1, -30)
+right.Position = UDim2.new(0, 185, 0, 30)
 right.Parent = menu
 
 -- Titel rechts
@@ -62,6 +108,44 @@ title.TextSize = 24
 title.TextColor3 = LIGHTBLUE
 title.Text = "Einstellungen"
 title.Parent = right
+
+-----------------------------------------------------
+-- RESIZE FUNKTIONALITÄT
+-----------------------------------------------------
+local resizeHandle = Instance.new("Frame")
+resizeHandle.Name = "ResizeHandle"
+resizeHandle.BackgroundColor3 = LIGHTBLUE
+resizeHandle.BorderSizePixel = 0
+resizeHandle.Size = UDim2.new(0, 15, 0, 15)
+resizeHandle.Position = UDim2.new(1, -15, 1, -15)
+resizeHandle.Parent = menu
+
+local resizing = false
+local resizeStart = nil
+local startSize = nil
+
+resizeHandle.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        resizing = true
+        resizeStart = input.Position
+        startSize = menu.Size
+    end
+end)
+
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        resizing = false
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if resizing and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - resizeStart
+        local newWidth = math.max(400, startSize.X.Offset + delta.X)
+        local newHeight = math.max(250, startSize.Y.Offset + delta.Y)
+        menu.Size = UDim2.new(0, newWidth, 0, newHeight)
+    end
+end)
 
 -----------------------------------------------------
 -- BUTTON FUNKTIONEN LINKS
