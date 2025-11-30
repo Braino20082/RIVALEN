@@ -1,65 +1,67 @@
 local UIS = game:GetService("UserInputService")
+local Player = game.Players.LocalPlayer
 
-local gui = script.Parent
-local menu = gui:WaitForChild("MenuFrame")
-
--- Anfangszustand
-menu.Visible = true
-
--- Taste F ein/ausblenden
-UIS.InputBegan:Connect(function(input, gpe)
-    if gpe then return end
-    if input.KeyCode == Enum.KeyCode.F then
-        menu.Visible = not menu.Visible
-    end
-end)
-
--- FARBEN
+-- Farben
 local GREY = Color3.fromRGB(40, 40, 40)
+local DARKGREY = Color3.fromRGB(55, 55, 55)
 local LIGHTBLUE = Color3.fromRGB(100, 170, 255)
 
--- Menü-Layout
+-----------------------------------------------------
+-- GUI ERSTELLEN
+-----------------------------------------------------
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "CustomMenuUI"
+gui.ResetOnSpawn = false
+gui.Parent = Player:WaitForChild("PlayerGui")
+
+-- Hauptmenü
+local menu = Instance.new("Frame")
+menu.Name = "MenuFrame"
 menu.BackgroundColor3 = GREY
 menu.Size = UDim2.new(0, 600, 0, 350)
 menu.Position = UDim2.new(0.5, -300, 0.5, -175)
+menu.Parent = gui
 
 -- Linkes Panel
-local LeftPanel = Instance.new("Frame")
-LeftPanel.Parent = menu
-LeftPanel.BackgroundColor3 = Color3.fromRGB(50,50,50)
-LeftPanel.Size = UDim2.new(0, 180, 1, 0)
+local left = Instance.new("Frame")
+left.BackgroundColor3 = DARKGREY
+left.Size = UDim2.new(0, 180, 1, 0)
+left.Parent = menu
 
-local UIList = Instance.new("UIListLayout")
-UIList.Parent = LeftPanel
-UIList.Padding = UDim.new(0, 6)
-UIList.FillDirection = Enum.FillDirection.Vertical
-UIList.SortOrder = Enum.SortOrder.LayoutOrder
+local list = Instance.new("UIListLayout")
+list.Padding = UDim.new(0, 6)
+list.SortOrder = Enum.SortOrder.LayoutOrder
+list.Parent = left
 
--- Rechts Panel
-local RightPanel = Instance.new("Frame")
-RightPanel.Parent = menu
-RightPanel.BackgroundColor3 = Color3.fromRGB(60,60,60)
-RightPanel.Position = UDim2.new(0, 185, 0, 0)
-RightPanel.Size = UDim2.new(1, -185, 1, 0)
+-- Rechtes Panel
+local right = Instance.new("Frame")
+right.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+right.Size = UDim2.new(1, -185, 1, 0)
+right.Position = UDim2.new(0, 185, 0, 0)
+right.Parent = menu
 
--- Titel für Rechts
-local Title = Instance.new("TextLabel")
-Title.Parent = RightPanel
-Title.Text = "Einstellungen"
-Title.TextColor3 = LIGHTBLUE
-Title.TextScaled = true
-Title.BackgroundTransparency = 1
-Title.Size = UDim2.new(1, 0, 0, 40)
+-- Titel rechts
+local title = Instance.new("TextLabel")
+title.BackgroundTransparency = 1
+title.Size = UDim2.new(1, 0, 0, 40)
+title.TextScaled = true
+title.TextColor3 = LIGHTBLUE
+title.Text = "Einstellungen"
+title.Parent = right
 
--- Beispiel Buttons Links
-local function CreateButton(name)
+-----------------------------------------------------
+-- BUTTON FUNKTIONEN LINKS
+-----------------------------------------------------
+
+local function CreateButton(text)
     local btn = Instance.new("TextButton")
-    btn.Parent = LeftPanel
-    btn.Text = name
-    btn.TextScaled = true
+    btn.Size = UDim2.new(1, -8, 0, 40)
     btn.BackgroundColor3 = GREY
     btn.TextColor3 = LIGHTBLUE
-    btn.Size = UDim2.new(1, -8, 0, 40)
+    btn.TextScaled = true
+    btn.Text = text
+    btn.Parent = left
 
     btn.MouseEnter:Connect(function()
         btn.BackgroundColor3 = Color3.fromRGB(60,60,60)
@@ -71,19 +73,31 @@ local function CreateButton(name)
     return btn
 end
 
-local btnSettings = CreateButton("Optionen")
-local btnVisuals = CreateButton("Anzeige")
-local btnStats = CreateButton("Infos")
+local btn1 = CreateButton("Optionen")
+local btn2 = CreateButton("Anzeige")
+local btn3 = CreateButton("Infos")
 
--- Beispiel-Funktion rechts ändern
-btnSettings.MouseButton1Click:Connect(function()
-    Title.Text = "Einstellungen"
+btn1.MouseButton1Click:Connect(function()
+    title.Text = "Einstellungen"
 end)
 
-btnVisuals.MouseButton1Click:Connect(function()
-    Title.Text = "Anzeige"
+btn2.MouseButton1Click:Connect(function()
+    title.Text = "Anzeige"
 end)
 
-btnStats.MouseButton1Click:Connect(function()
-    Title.Text = "Infos"
+btn3.MouseButton1Click:Connect(function()
+    title.Text = "Infos"
+end)
+
+-----------------------------------------------------
+-- F TASTE → GUI EIN / AUS
+-----------------------------------------------------
+
+menu.Visible = true
+
+UIS.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if input.KeyCode == Enum.KeyCode.F then
+        menu.Visible = not menu.Visible
+    end
 end)
