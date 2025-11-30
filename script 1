@@ -1,18 +1,16 @@
 local UIS = game:GetService("UserInputService")
 local Player = game.Players.LocalPlayer
-
--- Warte bis PlayerGui existiert
 local playerGui = Player:WaitForChild("PlayerGui")
 
 -- Farben
 local GREY = Color3.fromRGB(40, 40, 40)
 local DARKGREY = Color3.fromRGB(55, 55, 55)
+local LIGHTGREY = Color3.fromRGB(60, 60, 60)
 local LIGHTBLUE = Color3.fromRGB(100, 170, 255)
 
 -----------------------------------------------------
 -- GUI ERSTELLEN
 -----------------------------------------------------
-
 local gui = Instance.new("ScreenGui")
 gui.Name = "CustomMenuUI"
 gui.ResetOnSpawn = false
@@ -22,6 +20,7 @@ gui.Parent = playerGui
 local menu = Instance.new("Frame")
 menu.Name = "MenuFrame"
 menu.BackgroundColor3 = GREY
+menu.BorderSizePixel = 0
 menu.Size = UDim2.new(0, 600, 0, 350)
 menu.Position = UDim2.new(0.5, -300, 0.5, -175)
 menu.Parent = gui
@@ -29,6 +28,7 @@ menu.Parent = gui
 -- Linkes Panel
 local left = Instance.new("Frame")
 left.BackgroundColor3 = DARKGREY
+left.BorderSizePixel = 0
 left.Size = UDim2.new(0, 180, 1, 0)
 left.Parent = menu
 
@@ -37,9 +37,17 @@ list.Padding = UDim.new(0, 6)
 list.SortOrder = Enum.SortOrder.LayoutOrder
 list.Parent = left
 
+-- Padding für Buttons
+local padding = Instance.new("UIPadding")
+padding.PaddingTop = UDim.new(0, 4)
+padding.PaddingLeft = UDim.new(0, 4)
+padding.PaddingRight = UDim.new(0, 4)
+padding.Parent = left
+
 -- Rechtes Panel
 local right = Instance.new("Frame")
-right.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+right.BackgroundColor3 = LIGHTGREY
+right.BorderSizePixel = 0
 right.Size = UDim2.new(1, -185, 1, 0)
 right.Position = UDim2.new(0, 185, 0, 0)
 right.Parent = menu
@@ -48,7 +56,8 @@ right.Parent = menu
 local title = Instance.new("TextLabel")
 title.BackgroundTransparency = 1
 title.Size = UDim2.new(1, 0, 0, 40)
-title.TextScaled = true
+title.Font = Enum.Font.GothamBold
+title.TextSize = 24
 title.TextColor3 = LIGHTBLUE
 title.Text = "Einstellungen"
 title.Parent = right
@@ -56,23 +65,25 @@ title.Parent = right
 -----------------------------------------------------
 -- BUTTON FUNKTIONEN LINKS
 -----------------------------------------------------
-
 local function CreateButton(text)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(1, -8, 0, 40)
     btn.BackgroundColor3 = GREY
+    btn.BorderSizePixel = 0
     btn.TextColor3 = LIGHTBLUE
-    btn.TextScaled = true
+    btn.Font = Enum.Font.Gotham
+    btn.TextSize = 16
     btn.Text = text
     btn.Parent = left
-
+    
+    -- Hover Effekt
     btn.MouseEnter:Connect(function()
-        btn.BackgroundColor3 = Color3.fromRGB(60,60,60)
+        btn.BackgroundColor3 = LIGHTGREY
     end)
     btn.MouseLeave:Connect(function()
         btn.BackgroundColor3 = GREY
     end)
-
+    
     return btn
 end
 
@@ -95,7 +106,6 @@ end)
 -----------------------------------------------------
 -- F TASTE → GUI EIN / AUS
 -----------------------------------------------------
-
 menu.Visible = true
 
 UIS.InputBegan:Connect(function(input, gpe)
