@@ -1,5 +1,4 @@
 -- Fun Menu GUI Script
-local screenWidth, screenHeight = 800, 600
 
 -- Farben
 local colors = {
@@ -35,8 +34,6 @@ local players = {
 }
 
 function love.load()
-    love.window.setMode(screenWidth, screenHeight)
-    love.window.setTitle("Fun Menu")
     love.graphics.setBackgroundColor(20/255, 20/255, 40/255)
 end
 
