@@ -1,48 +1,47 @@
--- FUN MENU GUI - Single Script
--- Start hidden, toggle with RightShift
+-- FUN MENU GUI - Blue / Purple Theme
+-- Visible immediately on game start
 
 local Players = game:GetService("Players")
-local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 
 -- ScreenGui
 local gui = Instance.new("ScreenGui")
 gui.Name = "FunMenuGui"
 gui.ResetOnSpawn = false
-gui.Enabled = false -- STARTET AUS
+gui.Enabled = true -- SOFORT SICHTBAR
 gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 -- Main Frame
 local main = Instance.new("Frame")
 main.Size = UDim2.fromScale(0.6, 0.6)
 main.Position = UDim2.fromScale(0.2, 0.2)
-main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+main.BackgroundColor3 = Color3.fromRGB(25, 20, 45)
 main.Parent = gui
-Instance.new("UICorner", main).CornerRadius = UDim.new(0, 12)
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 14)
 
 -- Title
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 50)
-title.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+title.BackgroundColor3 = Color3.fromRGB(60, 40, 120)
 title.Text = "Fun Menu"
-title.TextColor3 = Color3.new(1,1,1)
+title.TextColor3 = Color3.fromRGB(220, 210, 255)
 title.Font = Enum.Font.GothamBold
-title.TextSize = 24
+title.TextSize = 26
 title.Parent = main
-Instance.new("UICorner", title).CornerRadius = UDim.new(0, 12)
+Instance.new("UICorner", title).CornerRadius = UDim.new(0, 14)
 
 -- Left Panel (25%)
 local left = Instance.new("Frame")
 left.Size = UDim2.new(0.25, 0, 1, -50)
 left.Position = UDim2.new(0, 0, 0, 50)
-left.BackgroundColor3 = Color3.fromRGB(30,30,30)
+left.BackgroundColor3 = Color3.fromRGB(40, 35, 80)
 left.Parent = main
 
 -- Right Panel
 local right = Instance.new("Frame")
 right.Size = UDim2.new(0.75, 0, 1, -50)
 right.Position = UDim2.new(0.25, 0, 0, 50)
-right.BackgroundColor3 = Color3.fromRGB(20,20,20)
+right.BackgroundColor3 = Color3.fromRGB(30, 25, 65)
 right.Parent = main
 
 -- Left Buttons
@@ -53,8 +52,8 @@ local function createLeftButton(text, order)
 	b.Text = text
 	b.Font = Enum.Font.GothamBold
 	b.TextSize = 18
-	b.TextColor3 = Color3.new(1,1,1)
-	b.BackgroundColor3 = Color3.fromRGB(45,45,45)
+	b.TextColor3 = Color3.fromRGB(230,230,255)
+	b.BackgroundColor3 = Color3.fromRGB(80, 60, 160)
 	b.Parent = left
 	Instance.new("UICorner", b).CornerRadius = UDim.new(0,8)
 	return b
@@ -79,21 +78,21 @@ local function showMe()
 	clearRight()
 
 	local toggle = Instance.new("TextButton")
-	toggle.Size = UDim2.new(0, 260, 0, 60)
-	toggle.Position = UDim2.new(0, 20, 0, 20)
+	toggle.Size = UDim2.new(0, 280, 0, 65)
+	toggle.Position = UDim2.new(0, 25, 0, 25)
 	toggle.Font = Enum.Font.GothamBold
 	toggle.TextSize = 20
 	toggle.TextColor3 = Color3.new(1,1,1)
 	toggle.Parent = right
-	Instance.new("UICorner", toggle).CornerRadius = UDim.new(0,10)
+	Instance.new("UICorner", toggle).CornerRadius = UDim.new(0,12)
 
 	local function refresh()
 		if aimbotEnabled then
 			toggle.Text = "Aimbot: AN"
-			toggle.BackgroundColor3 = Color3.fromRGB(60,180,75)
+			toggle.BackgroundColor3 = Color3.fromRGB(90, 70, 200)
 		else
 			toggle.Text = "Aimbot: AUS"
-			toggle.BackgroundColor3 = Color3.fromRGB(180,60,60)
+			toggle.BackgroundColor3 = Color3.fromRGB(70, 50, 140)
 		end
 	end
 
@@ -115,27 +114,20 @@ local function showPlayers()
 
 	for _,plr in pairs(Players:GetPlayers()) do
 		local b = Instance.new("TextButton")
-		b.Size = UDim2.new(1, -20, 0, 40)
+		b.Size = UDim2.new(1, -20, 0, 42)
 		b.Text = plr.Name
 		b.Font = Enum.Font.Gotham
 		b.TextSize = 16
 		b.TextColor3 = Color3.new(1,1,1)
-		b.BackgroundColor3 = Color3.fromHSV(math.random(), 0.6, 0.9)
+		b.BackgroundColor3 = Color3.fromHSV(0.75, 0.6, 0.9) -- lila/blau
 		b.Parent = right
 		Instance.new("UICorner", b).CornerRadius = UDim.new(0,8)
 	end
 end
 
+-- Button logic
 meBtn.MouseButton1Click:Connect(showMe)
 playerBtn.MouseButton1Click:Connect(showPlayers)
 
 -- Default page
 showMe()
-
--- TOGGLE MENU WITH RIGHT SHIFT
-UserInputService.InputBegan:Connect(function(input, gp)
-	if gp then return end
-	if input.KeyCode == Enum.KeyCode.RightShift then
-		gui.Enabled = not gui.Enabled
-	end
-end)
