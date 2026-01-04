@@ -1,188 +1,350 @@
--- Fun Menu GUI Script
+-- AIMBOT SYSTEM VARIABLEN (zu den anderen Variablen hinzufügen)
+local isAimbotEnabled = false
+local aimbotFOV = 200
+local aimbotSmoothing = 0.5
+local aimbotTargetPart = "Head"
+local aimbotConnection = nil
+local aimbotShowFOV = true
+local aimbotFOVCircle = nil
 
--- Farben
-local colors = {
-    background = {30, 30, 60},
-    sidebar = {40, 20, 80},
-    header = {60, 40, 120},
-    button = {80, 60, 150},
-    buttonHover = {100, 80, 180},
-    text = {255, 255, 255},
-    accent = {150, 100, 255}
-}
+-- AIMBOT SYSTEM
+local AimbotSystem = {}
 
--- GUI State
-local gui = {
-    x = 200,
-    y = 150,
-    width = 600,
-    height = 400,
-    dragging = false,
-    dragOffsetX = 0,
-    dragOffsetY = 0,
-    selectedMenu = "me",
-    aimbot = false,
-    visible = true
-}
-
--- Fake Player Liste
-local players = {
-    {name = "Player1", color = {255, 100, 100}},
-    {name = "Player2", color = {100, 255, 100}},
-    {name = "Player3", color = {100, 100, 255}},
-    {name = "Player4", color = {255, 255, 100}},
-    {name = "Player5", color = {255, 100, 255}}
-}
-
-function love.load()
-    love.graphics.setBackgroundColor(20/255, 20/255, 40/255)
+function AimbotSystem:GetClosestPlayerInFOV()
+	local closestPlayer = nil
+	local shortestDistance = math.huge
+	local camera = Camera
+	local screenCenter = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
+	
+	for _, player in pairs(Players:GetPlayers()) do
+		if player ~= LocalPlayer and player.Character then
+			local character = player.Character
+			local targetPart = character:FindFirstChild(aimbotTargetPart)
+			
+			if targetPart then
+				local humanoid = character:FindFirstChild("Humanoid")
+				if humanoid and humanoid.Health > 0 then
+					local screenPos, onScreen = camera:WorldToViewportPoint(targetPart.Position)
+					
+					if onScreen then
+						local distance = (Vector2.new(screenPos.X, screenPos.Y) - screenCenter).Magnitude
+						
+						if distance < aimbotFOV and distance < shortestDistance then
+							local ray = Ray.new(camera.CFrame.Position, (targetPart.Position - camera.CFrame.Position).Unit * 1000)
+							local part, position = workspace:FindPartOnRayWithIgnoreList(ray, {LocalPlayer.Character, camera})
+							
+							if part and part:IsDescendantOf(character) then
+								closestPlayer = player
+								shortestDistance = distance
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+	
+	return closestPlayer
 end
 
-function love.update(dt)
-    local mx, my = love.mouse.getPosition()
-    
-    if gui.visible and gui.dragging then
-        gui.x = mx - gui.dragOffsetX
-        gui.y = my - gui.dragOffsetY
-    end
+function AimbotSystem:AimAtPlayer(targetPlayer)
+	if not targetPlayer or not targetPlayer.Character then return end
+	
+	local character = targetPlayer.Character
+	local targetPart = character:FindFirstChild(aimbotTargetPart)
+	
+	if not targetPart then return end
+	
+	local camera = Camera
+	local targetPosition = targetPart.Position
+	
+	local direction = (targetPosition - camera.CFrame.Position).Unit
+	local targetCFrame = CFrame.new(camera.CFrame.Position, camera.CFrame.Position + direction)
+	
+	if aimbotSmoothing > 0 then
+		camera.CFrame = camera.CFrame:Lerp(targetCFrame, 1 - aimbotSmoothing)
+	else
+		camera.CFrame = targetCFrame
+	end
 end
 
-function love.draw()
-    if not gui.visible then return end
-    -- Hauptfenster
-    love.graphics.setColor(colors.background[1]/255, colors.background[2]/255, colors.background[3]/255)
-    love.graphics.rectangle("fill", gui.x, gui.y, gui.width, gui.height, 10, 10)
-    
-    -- Header
-    love.graphics.setColor(colors.header[1]/255, colors.header[2]/255, colors.header[3]/255)
-    love.graphics.rectangle("fill", gui.x, gui.y, gui.width, 40, 10, 10)
-    love.graphics.setColor(colors.text[1]/255, colors.text[2]/255, colors.text[3]/255)
-    love.graphics.print("Fun Menu", gui.x + 10, gui.y + 12, 0, 1.5, 1.5)
-    
-    -- Linke Sidebar (25%)
-    local sidebarWidth = gui.width * 0.25
-    love.graphics.setColor(colors.sidebar[1]/255, colors.sidebar[2]/255, colors.sidebar[3]/255)
-    love.graphics.rectangle("fill", gui.x, gui.y + 40, sidebarWidth, gui.height - 40)
-    
-    -- Menu Buttons
-    drawMenuButton("Me", gui.x + 10, gui.y + 60, sidebarWidth - 20, 40, "me")
-    drawMenuButton("Player", gui.x + 10, gui.y + 110, sidebarWidth - 20, 40, "player")
-    
-    -- Rechter Bereich (75%)
-    local contentX = gui.x + sidebarWidth
-    local contentWidth = gui.width - sidebarWidth
-    
-    if gui.selectedMenu == "me" then
-        drawMeContent(contentX, gui.y + 60, contentWidth)
-    elseif gui.selectedMenu == "player" then
-        drawPlayerContent(contentX, gui.y + 60, contentWidth)
-    end
+function AimbotSystem:CreateFOVCircle()
+	if aimbotFOVCircle then
+		aimbotFOVCircle:Remove()
+	end
+	
+	local drawing = Drawing or nil
+	if not drawing then
+		warn("[Vyrxis] Drawing API nicht verfügbar - FOV Circle deaktiviert")
+		return
+	end
+	
+	aimbotFOVCircle = drawing.new("Circle")
+	aimbotFOVCircle.Thickness = 2
+	aimbotFOVCircle.NumSides = 64
+	aimbotFOVCircle.Radius = aimbotFOV
+	aimbotFOVCircle.Filled = false
+	aimbotFOVCircle.Color = Color3.fromRGB(255, 255, 255)
+	aimbotFOVCircle.Transparency = 0.5
+	aimbotFOVCircle.Visible = aimbotShowFOV and isAimbotEnabled
+	aimbotFOVCircle.ZIndex = 999
 end
 
-function drawMenuButton(text, x, y, w, h, id)
-    local mx, my = love.mouse.getPosition()
-    local hover = mx >= x and mx <= x + w and my >= y and my <= y + h
-    local selected = gui.selectedMenu == id
-    
-    if selected then
-        love.graphics.setColor(colors.accent[1]/255, colors.accent[2]/255, colors.accent[3]/255)
-    elseif hover then
-        love.graphics.setColor(colors.buttonHover[1]/255, colors.buttonHover[2]/255, colors.buttonHover[3]/255)
-    else
-        love.graphics.setColor(colors.button[1]/255, colors.button[2]/255, colors.button[3]/255)
-    end
-    
-    love.graphics.rectangle("fill", x, y, w, h, 5, 5)
-    love.graphics.setColor(colors.text[1]/255, colors.text[2]/255, colors.text[3]/255)
-    love.graphics.print(text, x + 10, y + 12)
+function AimbotSystem:UpdateFOVCircle()
+	if aimbotFOVCircle then
+		local camera = Camera
+		aimbotFOVCircle.Position = Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)
+		aimbotFOVCircle.Radius = aimbotFOV
+		aimbotFOVCircle.Visible = aimbotShowFOV and isAimbotEnabled
+	end
 end
 
-function drawMeContent(x, y, w)
-    love.graphics.setColor(colors.text[1]/255, colors.text[2]/255, colors.text[3]/255)
-    love.graphics.print("Aimbot Settings", x + 20, y + 10, 0, 1.3, 1.3)
-    
-    -- Aimbot Toggle Button
-    local btnX = x + 20
-    local btnY = y + 50
-    local btnW = 150
-    local btnH = 35
-    
-    local mx, my = love.mouse.getPosition()
-    local hover = mx >= btnX and mx <= btnX + btnW and my >= btnY and my <= btnY + btnH
-    
-    if gui.aimbot then
-        love.graphics.setColor(100/255, 255/255, 100/255)
-    elseif hover then
-        love.graphics.setColor(colors.buttonHover[1]/255, colors.buttonHover[2]/255, colors.buttonHover[3]/255)
-    else
-        love.graphics.setColor(colors.button[1]/255, colors.button[2]/255, colors.button[3]/255)
-    end
-    
-    love.graphics.rectangle("fill", btnX, btnY, btnW, btnH, 5, 5)
-    love.graphics.setColor(colors.text[1]/255, colors.text[2]/255, colors.text[3]/255)
-    love.graphics.print("Aimbot: " .. (gui.aimbot and "AN" or "AUS"), btnX + 10, btnY + 10)
+function AimbotSystem:Enable()
+	if isAimbotEnabled then return end
+	
+	isAimbotEnabled = true
+	self:CreateFOVCircle()
+	
+	if aimbotConnection then
+		aimbotConnection:Disconnect()
+	end
+	
+	aimbotConnection = RunService.RenderStepped:Connect(function()
+		if not isAimbotEnabled then
+			if aimbotConnection then
+				aimbotConnection:Disconnect()
+			end
+			return
+		end
+		
+		self:UpdateFOVCircle()
+		
+		local mouseDown = UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2)
+		
+		if mouseDown then
+			local targetPlayer = self:GetClosestPlayerInFOV()
+			if targetPlayer then
+				self:AimAtPlayer(targetPlayer)
+			end
+		end
+	end)
+	
+	print("[Vyrxis] Aimbot aktiviert!")
 end
 
-function drawPlayerContent(x, y, w)
-    love.graphics.setColor(colors.text[1]/255, colors.text[2]/255, colors.text[3]/255)
-    love.graphics.print("Player Liste", x + 20, y + 10, 0, 1.3, 1.3)
-    
-    for i, player in ipairs(players) do
-        local py = y + 40 + (i - 1) * 45
-        
-        -- Player Box
-        love.graphics.setColor(colors.button[1]/255, colors.button[2]/255, colors.button[3]/255)
-        love.graphics.rectangle("fill", x + 20, py, w - 40, 35, 5, 5)
-        
-        -- Farb-Indikator
-        love.graphics.setColor(player.color[1]/255, player.color[2]/255, player.color[3]/255)
-        love.graphics.rectangle("fill", x + 30, py + 10, 15, 15, 3, 3)
-        
-        -- Player Name
-        love.graphics.setColor(colors.text[1]/255, colors.text[2]/255, colors.text[3]/255)
-        love.graphics.print(player.name, x + 55, py + 10)
-    end
+function AimbotSystem:Disable()
+	if not isAimbotEnabled then return end
+	
+	isAimbotEnabled = false
+	
+	if aimbotConnection then
+		aimbotConnection:Disconnect()
+		aimbotConnection = nil
+	end
+	
+	if aimbotFOVCircle then
+		aimbotFOVCircle:Remove()
+		aimbotFOVCircle = nil
+	end
+	
+	print("[Vyrxis] Aimbot deaktiviert!")
 end
 
-function love.mousepressed(x, y, button)
-    if button == 1 then
-        -- Header ziehen
-        if x >= gui.x and x <= gui.x + gui.width and y >= gui.y and y <= gui.y + 40 then
-            gui.dragging = true
-            gui.dragOffsetX = x - gui.x
-            gui.dragOffsetY = y - gui.y
-        end
-        
-        -- Menu Buttons
-        local sidebarWidth = gui.width * 0.25
-        if x >= gui.x + 10 and x <= gui.x + sidebarWidth - 10 then
-            if y >= gui.y + 60 and y <= gui.y + 100 then
-                gui.selectedMenu = "me"
-            elseif y >= gui.y + 110 and y <= gui.y + 150 then
-                gui.selectedMenu = "player"
-            end
-        end
-        
-        -- Aimbot Button
-        if gui.selectedMenu == "me" then
-            local contentX = gui.x + sidebarWidth
-            local btnX = contentX + 20
-            local btnY = gui.y + 110
-            if x >= btnX and x <= btnX + 150 and y >= btnY and y <= btnY + 35 then
-                gui.aimbot = not gui.aimbot
-            end
-        end
-    end
+-- FÜGE DIES IN DEN "ME TAB" EIN (nach dem Invisible Mode Block):
+
+-- Im createMenu() -> if name == "MeButton" then Block, nach Invisible Mode:
+
+-- Aimbot Toggle
+local aimbotRow = Instance.new("Frame")
+aimbotRow.Size = UDim2.new(1, -16, 0, 36)
+aimbotRow.BackgroundTransparency = 1
+aimbotRow.Parent = subFrame
+
+local aimbotText = Instance.new("TextLabel")
+aimbotText.Size = UDim2.new(1, -120, 1, 0)
+aimbotText.BackgroundTransparency = 1
+aimbotText.Text = "Aimbot"
+aimbotText.TextXAlignment = Enum.TextXAlignment.Left
+aimbotText.TextColor3 = Color3.fromRGB(64, 224, 208)
+aimbotText.TextScaled = true
+aimbotText.Font = Enum.Font.SourceSansBold
+aimbotText.Parent = aimbotRow
+
+local aimbotToggle = Instance.new("ImageButton")
+aimbotToggle.Size = UDim2.new(0, 36, 0, 21)
+aimbotToggle.Position = UDim2.new(1, -4, 0.5, 0)
+aimbotToggle.AnchorPoint = Vector2.new(1, 0.5)
+aimbotToggle.BackgroundTransparency = 1
+aimbotToggle.Image = isAimbotEnabled and "rbxassetid://133008101695657" or "rbxassetid://82936764863537"
+aimbotToggle.Parent = aimbotRow
+
+aimbotToggle.MouseButton1Click:Connect(function()
+	if isAimbotEnabled then
+		AimbotSystem:Disable()
+		aimbotToggle.Image = "rbxassetid://82936764863537"
+	else
+		AimbotSystem:Enable()
+		aimbotToggle.Image = "rbxassetid://133008101695657"
+	end
+end)
+
+-- Aimbot Info Text
+local aimbotInfo = Instance.new("TextLabel")
+aimbotInfo.Size = UDim2.new(1, -16, 0, 40)
+aimbotInfo.BackgroundTransparency = 1
+aimbotInfo.Text = "Hold Right Mouse Button to aim at nearest player"
+aimbotInfo.TextColor3 = Color3.fromRGB(150, 150, 150)
+aimbotInfo.TextSize = 12
+aimbotInfo.TextWrapped = true
+aimbotInfo.Font = Enum.Font.SourceSans
+aimbotInfo.Parent = subFrame
+
+-- FOV Slider
+local fovBox = createSlider(subFrame, "Aimbot FOV", 50, 500, aimbotFOV)
+fovBox.Changed:Connect(function()
+	local val = tonumber(fovBox.Text)
+	if val then
+		aimbotFOV = val
+		savedSettings.aimbotFOV = val
+	end
+end)
+
+-- Smoothing Slider
+local smoothBox = createSlider(subFrame, "Aimbot Smoothing", 0, 100, aimbotSmoothing * 100)
+smoothBox.Changed:Connect(function()
+	local val = tonumber(smoothBox.Text)
+	if val then
+		aimbotSmoothing = val / 100
+		savedSettings.aimbotSmoothing = val
+	end
+end)
+
+-- Target Part Selector
+local targetPartRow = Instance.new("Frame")
+targetPartRow.Size = UDim2.new(1, -16, 0, 36)
+targetPartRow.BackgroundTransparency = 1
+targetPartRow.Parent = subFrame
+
+local targetPartText = Instance.new("TextLabel")
+targetPartText.Size = UDim2.new(1, -120, 1, 0)
+targetPartText.BackgroundTransparency = 1
+targetPartText.Text = "Target Part"
+targetPartText.TextXAlignment = Enum.TextXAlignment.Left
+targetPartText.TextColor3 = Color3.fromRGB(64, 224, 208)
+targetPartText.TextScaled = true
+targetPartText.Font = Enum.Font.SourceSansBold
+targetPartText.Parent = targetPartRow
+
+local targetPartDropdown = Instance.new("TextButton")
+targetPartDropdown.Size = UDim2.new(0, 100, 0, 24)
+targetPartDropdown.Position = UDim2.new(1, -4, 0.5, 0)
+targetPartDropdown.AnchorPoint = Vector2.new(1, 0.5)
+targetPartDropdown.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+targetPartDropdown.TextColor3 = Color3.fromRGB(255, 255, 255)
+targetPartDropdown.Text = aimbotTargetPart
+targetPartDropdown.Font = Enum.Font.SourceSans
+targetPartDropdown.TextScaled = true
+targetPartDropdown.Parent = targetPartRow
+
+local targetPartCorner = Instance.new("UICorner")
+targetPartCorner.CornerRadius = UDim.new(0, 4)
+targetPartCorner.Parent = targetPartDropdown
+
+-- Dropdown Menu
+local targetPartMenu = Instance.new("ScrollingFrame")
+targetPartMenu.Size = UDim2.new(0, 100, 0, 150)
+targetPartMenu.Position = UDim2.new(1, -4, 1, 2)
+targetPartMenu.AnchorPoint = Vector2.new(1, 0)
+targetPartMenu.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+targetPartMenu.BorderSizePixel = 0
+targetPartMenu.ScrollBarThickness = 4
+targetPartMenu.Visible = false
+targetPartMenu.ZIndex = 100
+targetPartMenu.Parent = targetPartRow
+
+local targetPartMenuCorner = Instance.new("UICorner")
+targetPartMenuCorner.CornerRadius = UDim.new(0, 4)
+targetPartMenuCorner.Parent = targetPartMenu
+
+local targetPartMenuLayout = Instance.new("UIListLayout")
+targetPartMenuLayout.Parent = targetPartMenu
+targetPartMenuLayout.SortOrder = Enum.SortOrder.LayoutOrder
+targetPartMenuLayout.Padding = UDim.new(0, 2)
+
+local targetParts = {"Head", "Torso", "HumanoidRootPart", "UpperTorso", "LowerTorso"}
+
+for _, partName in ipairs(targetParts) do
+	local partOption = Instance.new("TextButton")
+	partOption.Size = UDim2.new(1, -4, 0, 24)
+	partOption.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+	partOption.TextColor3 = Color3.fromRGB(255, 255, 255)
+	partOption.Text = partName
+	partOption.Font = Enum.Font.SourceSans
+	partOption.TextScaled = true
+	partOption.ZIndex = 101
+	partOption.Parent = targetPartMenu
+	
+	local partOptionCorner = Instance.new("UICorner")
+	partOptionCorner.CornerRadius = UDim.new(0, 3)
+	partOptionCorner.Parent = partOption
+	
+	partOption.MouseButton1Click:Connect(function()
+		aimbotTargetPart = partName
+		targetPartDropdown.Text = partName
+		targetPartMenu.Visible = false
+		savedSettings.aimbotTargetPart = partName
+	end)
 end
 
-function love.mousereleased(x, y, button)
-    if button == 1 then
-        gui.dragging = false
-    end
-end
+targetPartDropdown.MouseButton1Click:Connect(function()
+	targetPartMenu.Visible = not targetPartMenu.Visible
+end)
 
-function love.keypressed(key)
-    if key == "insert" or key == "home" then
-        gui.visible = not gui.visible
-    end
-end
+-- Show FOV Circle Toggle
+local showFOVRow = Instance.new("Frame")
+showFOVRow.Size = UDim2.new(1, -16, 0, 36)
+showFOVRow.BackgroundTransparency = 1
+showFOVRow.Parent = subFrame
+
+local showFOVText = Instance.new("TextLabel")
+showFOVText.Size = UDim2.new(1, -120, 1, 0)
+showFOVText.BackgroundTransparency = 1
+showFOVText.Text = "Show FOV Circle"
+showFOVText.TextXAlignment = Enum.TextXAlignment.Left
+showFOVText.TextColor3 = Color3.fromRGB(64, 224, 208)
+showFOVText.TextScaled = true
+showFOVText.Font = Enum.Font.SourceSansBold
+showFOVText.Parent = showFOVRow
+
+local showFOVToggle = Instance.new("ImageButton")
+showFOVToggle.Size = UDim2.new(0, 36, 0, 21)
+showFOVToggle.Position = UDim2.new(1, -4, 0.5, 0)
+showFOVToggle.AnchorPoint = Vector2.new(1, 0.5)
+showFOVToggle.BackgroundTransparency = 1
+showFOVToggle.Image = aimbotShowFOV and "rbxassetid://133008101695657" or "rbxassetid://82936764863537"
+showFOVToggle.Parent = showFOVRow
+
+showFOVToggle.MouseButton1Click:Connect(function()
+	aimbotShowFOV = not aimbotShowFOV
+	showFOVToggle.Image = aimbotShowFOV and "rbxassetid://133008101695657" or "rbxassetid://82936764863537"
+	savedSettings.aimbotShowFOV = aimbotShowFOV
+	
+	if aimbotFOVCircle then
+		aimbotFOVCircle.Visible = aimbotShowFOV and isAimbotEnabled
+	end
+end)
+
+-- FÜGE DIESE WERTE IN defaultSettings HINZU:
+-- aimbotFOV = 200,
+-- aimbotSmoothing = 50,
+-- aimbotTargetPart = "Head",
+-- aimbotShowFOV = true
+
+-- LADE GESPEICHERTE AIMBOT EINSTELLUNGEN:
+aimbotFOV = savedSettings.aimbotFOV or 200
+aimbotSmoothing = (savedSettings.aimbotSmoothing or 50) / 100
+aimbotTargetPart = savedSettings.aimbotTargetPart or "Head"
+aimbotShowFOV = savedSettings.aimbotShowFOV ~= false
+
+print("[Vyrxis] Aimbot System geladen!")
+print("[Vyrxis] Halte Rechte Maustaste um zu zielen")
