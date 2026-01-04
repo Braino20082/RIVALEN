@@ -13,15 +13,16 @@ local colors = {
 
 -- GUI State
 local gui = {
-    x = 100,
-    y = 100,
+    x = 200,
+    y = 150,
     width = 600,
     height = 400,
     dragging = false,
     dragOffsetX = 0,
     dragOffsetY = 0,
     selectedMenu = "me",
-    aimbot = false
+    aimbot = false,
+    visible = true
 }
 
 -- Fake Player Liste
@@ -40,13 +41,14 @@ end
 function love.update(dt)
     local mx, my = love.mouse.getPosition()
     
-    if gui.dragging then
+    if gui.visible and gui.dragging then
         gui.x = mx - gui.dragOffsetX
         gui.y = my - gui.dragOffsetY
     end
 end
 
 function love.draw()
+    if not gui.visible then return end
     -- Hauptfenster
     love.graphics.setColor(colors.background[1]/255, colors.background[2]/255, colors.background[3]/255)
     love.graphics.rectangle("fill", gui.x, gui.y, gui.width, gui.height, 10, 10)
@@ -176,5 +178,11 @@ end
 function love.mousereleased(x, y, button)
     if button == 1 then
         gui.dragging = false
+    end
+end
+
+function love.keypressed(key)
+    if key == "insert" or key == "home" then
+        gui.visible = not gui.visible
     end
 end
