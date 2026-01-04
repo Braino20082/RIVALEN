@@ -1,133 +1,183 @@
--- FUN MENU GUI - Blue / Purple Theme
--- Visible immediately on game start
+-- Fun Menu GUI Script
+local screenWidth, screenHeight = 800, 600
 
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
+-- Farben
+local colors = {
+    background = {30, 30, 60},
+    sidebar = {40, 20, 80},
+    header = {60, 40, 120},
+    button = {80, 60, 150},
+    buttonHover = {100, 80, 180},
+    text = {255, 255, 255},
+    accent = {150, 100, 255}
+}
 
--- ScreenGui
-local gui = Instance.new("ScreenGui")
-gui.Name = "FunMenuGui"
-gui.ResetOnSpawn = false
-gui.Enabled = true -- SOFORT SICHTBAR
-gui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+-- GUI State
+local gui = {
+    x = 100,
+    y = 100,
+    width = 600,
+    height = 400,
+    dragging = false,
+    dragOffsetX = 0,
+    dragOffsetY = 0,
+    selectedMenu = "me",
+    aimbot = false
+}
 
--- Main Frame
-local main = Instance.new("Frame")
-main.Size = UDim2.fromScale(0.6, 0.6)
-main.Position = UDim2.fromScale(0.2, 0.2)
-main.BackgroundColor3 = Color3.fromRGB(25, 20, 45)
-main.Parent = gui
-Instance.new("UICorner", main).CornerRadius = UDim.new(0, 14)
+-- Fake Player Liste
+local players = {
+    {name = "Player1", color = {255, 100, 100}},
+    {name = "Player2", color = {100, 255, 100}},
+    {name = "Player3", color = {100, 100, 255}},
+    {name = "Player4", color = {255, 255, 100}},
+    {name = "Player5", color = {255, 100, 255}}
+}
 
--- Title
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 50)
-title.BackgroundColor3 = Color3.fromRGB(60, 40, 120)
-title.Text = "Fun Menu"
-title.TextColor3 = Color3.fromRGB(220, 210, 255)
-title.Font = Enum.Font.GothamBold
-title.TextSize = 26
-title.Parent = main
-Instance.new("UICorner", title).CornerRadius = UDim.new(0, 14)
-
--- Left Panel (25%)
-local left = Instance.new("Frame")
-left.Size = UDim2.new(0.25, 0, 1, -50)
-left.Position = UDim2.new(0, 0, 0, 50)
-left.BackgroundColor3 = Color3.fromRGB(40, 35, 80)
-left.Parent = main
-
--- Right Panel
-local right = Instance.new("Frame")
-right.Size = UDim2.new(0.75, 0, 1, -50)
-right.Position = UDim2.new(0.25, 0, 0, 50)
-right.BackgroundColor3 = Color3.fromRGB(30, 25, 65)
-right.Parent = main
-
--- Left Buttons
-local function createLeftButton(text, order)
-	local b = Instance.new("TextButton")
-	b.Size = UDim2.new(1, -10, 0, 45)
-	b.Position = UDim2.new(0, 5, 0, 10 + (order-1)*55)
-	b.Text = text
-	b.Font = Enum.Font.GothamBold
-	b.TextSize = 18
-	b.TextColor3 = Color3.fromRGB(230,230,255)
-	b.BackgroundColor3 = Color3.fromRGB(80, 60, 160)
-	b.Parent = left
-	Instance.new("UICorner", b).CornerRadius = UDim.new(0,8)
-	return b
+function love.load()
+    love.window.setMode(screenWidth, screenHeight)
+    love.window.setTitle("Fun Menu")
+    love.graphics.setBackgroundColor(20/255, 20/255, 40/255)
 end
 
-local meBtn = createLeftButton("Me", 1)
-local playerBtn = createLeftButton("Player", 2)
-
--- Clear right panel
-local function clearRight()
-	for _,v in pairs(right:GetChildren()) do
-		if not v:IsA("UIListLayout") then
-			v:Destroy()
-		end
-	end
+function love.update(dt)
+    local mx, my = love.mouse.getPosition()
+    
+    if gui.dragging then
+        gui.x = mx - gui.dragOffsetX
+        gui.y = my - gui.dragOffsetY
+    end
 end
 
--- ME MENU
-local aimbotEnabled = false
-
-local function showMe()
-	clearRight()
-
-	local toggle = Instance.new("TextButton")
-	toggle.Size = UDim2.new(0, 280, 0, 65)
-	toggle.Position = UDim2.new(0, 25, 0, 25)
-	toggle.Font = Enum.Font.GothamBold
-	toggle.TextSize = 20
-	toggle.TextColor3 = Color3.new(1,1,1)
-	toggle.Parent = right
-	Instance.new("UICorner", toggle).CornerRadius = UDim.new(0,12)
-
-	local function refresh()
-		if aimbotEnabled then
-			toggle.Text = "Aimbot: AN"
-			toggle.BackgroundColor3 = Color3.fromRGB(90, 70, 200)
-		else
-			toggle.Text = "Aimbot: AUS"
-			toggle.BackgroundColor3 = Color3.fromRGB(70, 50, 140)
-		end
-	end
-
-	toggle.MouseButton1Click:Connect(function()
-		aimbotEnabled = not aimbotEnabled
-		refresh()
-	end)
-
-	refresh()
+function love.draw()
+    -- Hauptfenster
+    love.graphics.setColor(colors.background[1]/255, colors.background[2]/255, colors.background[3]/255)
+    love.graphics.rectangle("fill", gui.x, gui.y, gui.width, gui.height, 10, 10)
+    
+    -- Header
+    love.graphics.setColor(colors.header[1]/255, colors.header[2]/255, colors.header[3]/255)
+    love.graphics.rectangle("fill", gui.x, gui.y, gui.width, 40, 10, 10)
+    love.graphics.setColor(colors.text[1]/255, colors.text[2]/255, colors.text[3]/255)
+    love.graphics.print("Fun Menu", gui.x + 10, gui.y + 12, 0, 1.5, 1.5)
+    
+    -- Linke Sidebar (25%)
+    local sidebarWidth = gui.width * 0.25
+    love.graphics.setColor(colors.sidebar[1]/255, colors.sidebar[2]/255, colors.sidebar[3]/255)
+    love.graphics.rectangle("fill", gui.x, gui.y + 40, sidebarWidth, gui.height - 40)
+    
+    -- Menu Buttons
+    drawMenuButton("Me", gui.x + 10, gui.y + 60, sidebarWidth - 20, 40, "me")
+    drawMenuButton("Player", gui.x + 10, gui.y + 110, sidebarWidth - 20, 40, "player")
+    
+    -- Rechter Bereich (75%)
+    local contentX = gui.x + sidebarWidth
+    local contentWidth = gui.width - sidebarWidth
+    
+    if gui.selectedMenu == "me" then
+        drawMeContent(contentX, gui.y + 60, contentWidth)
+    elseif gui.selectedMenu == "player" then
+        drawPlayerContent(contentX, gui.y + 60, contentWidth)
+    end
 end
 
--- PLAYER MENU
-local function showPlayers()
-	clearRight()
-
-	local layout = Instance.new("UIListLayout")
-	layout.Padding = UDim.new(0, 8)
-	layout.Parent = right
-
-	for _,plr in pairs(Players:GetPlayers()) do
-		local b = Instance.new("TextButton")
-		b.Size = UDim2.new(1, -20, 0, 42)
-		b.Text = plr.Name
-		b.Font = Enum.Font.Gotham
-		b.TextSize = 16
-		b.TextColor3 = Color3.new(1,1,1)
-		b.BackgroundColor3 = Color3.fromHSV(0.75, 0.6, 0.9) -- lila/blau
-		b.Parent = right
-		Instance.new("UICorner", b).CornerRadius = UDim.new(0,8)
-	end
+function drawMenuButton(text, x, y, w, h, id)
+    local mx, my = love.mouse.getPosition()
+    local hover = mx >= x and mx <= x + w and my >= y and my <= y + h
+    local selected = gui.selectedMenu == id
+    
+    if selected then
+        love.graphics.setColor(colors.accent[1]/255, colors.accent[2]/255, colors.accent[3]/255)
+    elseif hover then
+        love.graphics.setColor(colors.buttonHover[1]/255, colors.buttonHover[2]/255, colors.buttonHover[3]/255)
+    else
+        love.graphics.setColor(colors.button[1]/255, colors.button[2]/255, colors.button[3]/255)
+    end
+    
+    love.graphics.rectangle("fill", x, y, w, h, 5, 5)
+    love.graphics.setColor(colors.text[1]/255, colors.text[2]/255, colors.text[3]/255)
+    love.graphics.print(text, x + 10, y + 12)
 end
 
--- Button logic
-meBtn.MouseButton1Click:Connect(showMe)
-playerBtn.MouseButton1Click:Connect(showPlayers)
+function drawMeContent(x, y, w)
+    love.graphics.setColor(colors.text[1]/255, colors.text[2]/255, colors.text[3]/255)
+    love.graphics.print("Aimbot Settings", x + 20, y + 10, 0, 1.3, 1.3)
+    
+    -- Aimbot Toggle Button
+    local btnX = x + 20
+    local btnY = y + 50
+    local btnW = 150
+    local btnH = 35
+    
+    local mx, my = love.mouse.getPosition()
+    local hover = mx >= btnX and mx <= btnX + btnW and my >= btnY and my <= btnY + btnH
+    
+    if gui.aimbot then
+        love.graphics.setColor(100/255, 255/255, 100/255)
+    elseif hover then
+        love.graphics.setColor(colors.buttonHover[1]/255, colors.buttonHover[2]/255, colors.buttonHover[3]/255)
+    else
+        love.graphics.setColor(colors.button[1]/255, colors.button[2]/255, colors.button[3]/255)
+    end
+    
+    love.graphics.rectangle("fill", btnX, btnY, btnW, btnH, 5, 5)
+    love.graphics.setColor(colors.text[1]/255, colors.text[2]/255, colors.text[3]/255)
+    love.graphics.print("Aimbot: " .. (gui.aimbot and "AN" or "AUS"), btnX + 10, btnY + 10)
+end
 
--- Default page
-showMe()
+function drawPlayerContent(x, y, w)
+    love.graphics.setColor(colors.text[1]/255, colors.text[2]/255, colors.text[3]/255)
+    love.graphics.print("Player Liste", x + 20, y + 10, 0, 1.3, 1.3)
+    
+    for i, player in ipairs(players) do
+        local py = y + 40 + (i - 1) * 45
+        
+        -- Player Box
+        love.graphics.setColor(colors.button[1]/255, colors.button[2]/255, colors.button[3]/255)
+        love.graphics.rectangle("fill", x + 20, py, w - 40, 35, 5, 5)
+        
+        -- Farb-Indikator
+        love.graphics.setColor(player.color[1]/255, player.color[2]/255, player.color[3]/255)
+        love.graphics.rectangle("fill", x + 30, py + 10, 15, 15, 3, 3)
+        
+        -- Player Name
+        love.graphics.setColor(colors.text[1]/255, colors.text[2]/255, colors.text[3]/255)
+        love.graphics.print(player.name, x + 55, py + 10)
+    end
+end
+
+function love.mousepressed(x, y, button)
+    if button == 1 then
+        -- Header ziehen
+        if x >= gui.x and x <= gui.x + gui.width and y >= gui.y and y <= gui.y + 40 then
+            gui.dragging = true
+            gui.dragOffsetX = x - gui.x
+            gui.dragOffsetY = y - gui.y
+        end
+        
+        -- Menu Buttons
+        local sidebarWidth = gui.width * 0.25
+        if x >= gui.x + 10 and x <= gui.x + sidebarWidth - 10 then
+            if y >= gui.y + 60 and y <= gui.y + 100 then
+                gui.selectedMenu = "me"
+            elseif y >= gui.y + 110 and y <= gui.y + 150 then
+                gui.selectedMenu = "player"
+            end
+        end
+        
+        -- Aimbot Button
+        if gui.selectedMenu == "me" then
+            local contentX = gui.x + sidebarWidth
+            local btnX = contentX + 20
+            local btnY = gui.y + 110
+            if x >= btnX and x <= btnX + 150 and y >= btnY and y <= btnY + 35 then
+                gui.aimbot = not gui.aimbot
+            end
+        end
+    end
+end
+
+function love.mousereleased(x, y, button)
+    if button == 1 then
+        gui.dragging = false
+    end
+end
